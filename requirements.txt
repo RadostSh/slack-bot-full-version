@@ -1,0 +1,19 @@
+# Web Framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+
+# Slack Integration
+slack-bolt==1.18.1
+slack-sdk==3.26.2
+
+# AI Service
+google-genai
+
+# Environment & Configuration
+python-dotenv==1.0.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# HTTP Client
+httpx==0.26.0
+

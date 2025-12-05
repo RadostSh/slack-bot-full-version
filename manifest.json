@@ -1,0 +1,52 @@
+{
+    "display_information": {
+      "name": "Incident Communication Bot",
+      "background_color": "#2c2d30",
+      "description": "AI-powered bot that generates professional incident communication messages for customers and internal teams",
+      "long_description": "This bot helps teams quickly generate professional incident communication messages using AI. Simply mention the bot with an incident description or use the /incident-message command, and it will generate both customer-facing and internal team messages."
+    },
+    "features": {
+      "app_home": {
+        "home_tab_enabled": false,
+        "messages_tab_enabled": true,
+        "messages_tab_read_only_enabled": false
+      },
+      "bot_user": {
+        "display_name": "ops-bot",
+        "always_online": true
+      },
+      "slash_commands": [
+        {
+          "command": "/incident-message",
+          "description": "Generate incident communication messages",
+          "usage_hint": "[incident description]",
+          "url": "https://your-domain.com/slack/commands",
+          "should_escape": false
+        }
+      ]
+    },
+    "oauth_config": {
+      "scopes": {
+        "bot": [
+          "app_mentions:read",
+          "chat:write",
+          "commands"
+        ]
+      }
+    },
+    "settings": {
+      "event_subscriptions": {
+        "request_url": "https://your-domain.com/slack/events",
+        "bot_events": [
+          "app_mention"
+        ]
+      },
+      "interactivity": {
+        "is_enabled": false
+      },
+      "org_deploy_enabled": false,
+      "socket_mode_enabled": false,
+      "token_rotation_enabled": false
+    }
+  }
+  
