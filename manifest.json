@@ -20,7 +20,7 @@
           "command": "/incident-message",
           "description": "Generate incident communication messages",
           "usage_hint": "[incident description]",
-          "url": "https://your-domain.com/slack/commands",
+          "url": "https://slack-bot-full-version-production.up.railway.app/slack/commands",
           "should_escape": false
         }
       ]
@@ -36,7 +36,7 @@
     },
     "settings": {
       "event_subscriptions": {
-        "request_url": "https://your-domain.com/slack/events",
+        "request_url": "https://slack-bot-full-version-production.up.railway.app/slack/events",
         "bot_events": [
           "app_mention"
         ]

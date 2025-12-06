@@ -94,7 +94,8 @@ class IncidentProcessor:
         user_id: str,
         channel_id: str,
         logger: logging.Logger,
-        send_message: Callable[[str], None],
+        send_message: Callable[[str], Any],
+        update_message: Optional[Callable[[str, str], None]] = None,
     ) -> bool:
         """
         Process an incident: validate, generate messages, format, and save.
@@ -104,7 +105,8 @@ class IncidentProcessor:
             user_id: Slack user ID
             channel_id: Slack channel ID
             logger: Logger instance
-            send_message: Callback function to send messages
+            send_message: Callback function to send messages (returns response with 'ts')
+            update_message: Optional callback function to update existing messages
             
         Returns:
             True if successful, False otherwise
@@ -115,24 +117,32 @@ class IncidentProcessor:
             return False
         
         # Show processing indicator
-        send_message("Generating incident communication messages...")
+        response = send_message("Generating incident communication messages...")
+        processing_ts = response.get("ts") if response else None
         
         # Generate messages using AI
         messages = self.generate_messages(incident_description)
         
         if not messages or not messages.get("customer_message") or not messages.get("internal_message"):
-            send_message("Sorry, I encountered an error generating the messages. Please try again.")
+            error_msg = "Sorry, I encountered an error generating the messages. Please try again."
+            if update_message and processing_ts:
+                update_message(processing_ts, error_msg)
+            else:
+                send_message(error_msg)
             logger.warning(f"Failed to generate messages for user {user_id}")
             return False
         
         # Format and send response
         response_text = format_response(
-            incident_description,
             messages["customer_message"],
             messages["internal_message"]
         )
         
-        send_message(response_text)
+        # Update the processing message with the final response
+        if update_message and processing_ts:
+            update_message(processing_ts, response_text)
+        else:
+            send_message(response_text)
         
         # Save to database
         save_success = self.save_incident(
@@ -167,7 +177,7 @@ def create_slack_app() -> App:
     processor = IncidentProcessor()
     
     @app.event("app_mention")
-    def handle_app_mention(event: Dict[str, Any], say: Say, logger: logging.Logger):
+    def handle_app_mention(event: Dict[str, Any], say: Say, logger: logging.Logger, client):
         """
         Handle when the bot is mentioned in a channel.
         Extracts incident description, generates messages, and responds in thread.
@@ -176,6 +186,7 @@ def create_slack_app() -> App:
             event: Slack event payload
             say: Function to send messages to Slack
             logger: Logger instance
+            client: Slack client for API calls
         """
         thread_ts = event.get("ts")
         user_id = event.get("user")
@@ -188,7 +199,15 @@ def create_slack_app() -> App:
             
             # Create a closure to send messages in thread
             def send_message(message: str):
-                say(text=message, thread_ts=thread_ts)
+                return say(text=message, thread_ts=thread_ts)
+            
+            # Create a closure to update messages
+            def update_message(message_ts: str, new_text: str):
+                client.chat_update(
+                    channel=channel_id,
+                    ts=message_ts,
+                    text=new_text
+                )
             
             # Process the incident
             processor.process_incident(
@@ -197,6 +216,7 @@ def create_slack_app() -> App:
                 channel_id=channel_id,
                 logger=logger,
                 send_message=send_message,
+                update_message=update_message,
             )
             
         except Exception as e:
@@ -257,12 +277,11 @@ def create_slack_app() -> App:
     return app
 
 
-def format_response(incident_description: str, customer_msg: str, internal_msg: str) -> str:
+def format_response(customer_msg: str, internal_msg: str) -> str:
     """
     Format the AI-generated messages for Slack with proper markdown.
     
     Args:
-        incident_description: Original incident text
         customer_msg: Customer-facing message
         internal_msg: Internal team message
         
@@ -270,11 +289,6 @@ def format_response(incident_description: str, customer_msg: str, internal_msg: 
         Formatted string with Slack markdown
     """
     return f"""*Incident Communication Messages Generated*
-
-*Original Incident:*
-{incident_description}
-
----
 
 *Customer-Facing Message:*
 {customer_msg}
