@@ -11,7 +11,7 @@ google-genai
 
 # Environment & Configuration
 python-dotenv==1.0.0
-pydantic==2.5.3
+pydantic==2.3.0
 pydantic-settings==2.1.0
 
 # HTTP Client
